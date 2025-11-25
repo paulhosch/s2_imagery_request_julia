@@ -5,26 +5,31 @@ Interactive Python script to download and visualize Sentinel-2 true color imager
 ## Features
 
 ### Dual AOI Support
+
 - Shapefile-based AOIs for large regions (e.g., Valencia)
 - Coordinate-based square AOIs for specific point locations
 - Automatic overall bounding AOI for coordinate sets
 
 ### True Color Processing
+
 - Official Sentinel Hub normalization method (linear gain 2.5)
 - Consistent, comparable colors across all images
 - Bright, natural-looking visualization
 
 ### Comprehensive Metadata
+
 - Automatic doc.txt generation for each image
 - Includes projection, resolution, orbit info, cloud cover, processing details
 - Full STAC metadata from Sentinel-2 tiles
 
 ### Smart Projection Handling
+
 - Native UTM projection preserves data quality
 - Accurate metric measurements for coordinate squares
 - Automatic UTM zone detection
 
 ### Robust Processing
+
 - Automatic retry logic for cloud storage issues
 - Handles multi-tile mosaicking
 - Configurable date ranges per AOI type
@@ -33,18 +38,21 @@ Interactive Python script to download and visualize Sentinel-2 true color imager
 ## Installation
 
 ### Requirements
+
 - Python 3.8+
 - Microsoft Planetary Computer STAC API access
 
 ### Setup
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/paulhosch/s2_imagery_request_julia.git
 cd s2_imagery_request_julia
 ```
 
 2. Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -54,6 +62,7 @@ pip install -r requirements.txt
 Edit `config.yaml` to configure your AOIs and processing settings:
 
 ### Shapefile-based AOIs (e.g., Valencia)
+
 ```yaml
 shapefile_aois:
   - location_name: "Valencia"
@@ -64,12 +73,13 @@ shapefile_aois:
 ```
 
 ### Coordinate-based AOIs (e.g., Czechia)
+
 ```yaml
 coordinate_aois:
   location_group_name: "Czechia"
-  square_size_meters: 1000  # Creates 1km x 1km squares
-  overall_buffer_meters: 500  # Buffer for overall bounding AOI
-  process_overall: true  # Create overall bounding image
+  square_size_meters: 1000 # Creates 1km x 1km squares
+  overall_buffer_meters: 500 # Buffer for overall bounding AOI
+  process_overall: true # Create overall bounding image
   date_range:
     start: "2021-07-18"
     end: "2021-07-24"
@@ -81,17 +91,18 @@ coordinate_aois:
 ```
 
 ### Processing Settings
+
 ```yaml
 sentinel2:
-  max_cloud_cover: 100  # Maximum cloud cover percentage
-  min_aoi_coverage: 100  # Minimum AOI coverage
+  max_cloud_cover: 100 # Maximum cloud cover percentage
+  min_aoi_coverage: 100 # Minimum AOI coverage
 
 output:
   base_dir: "output"
   tif_subdir: "tif"
   jpg_subdir: "jpg"
-  jpg_quality: 95  # JPEG quality (0-100)
-  target_resolution: 10  # meters/pixel
+  jpg_quality: 95 # JPEG quality (0-100)
+  target_resolution: 10 # meters/pixel
 ```
 
 ## Usage
@@ -128,17 +139,21 @@ output/
 ## Key Parameters
 
 ### Square AOI Size
+
 - 500m: Minimum recommended (50x50 pixels at 10m resolution)
 - 1000m: Good balance (100x100 pixels) - default
 - 2000m: Large context (200x200 pixels)
 
 ### JPEG Quality
+
 - 95: Excellent quality, minimal artifacts - default
 - 85-90: Good quality, smaller files
 - 70-85: Web display
 
 ### True Color Normalization
+
 Uses official Sentinel Hub method:
+
 ```python
 reflectance = pixel_value / 10000.0
 output = reflectance * gain  # gain = 2.5 (default)
@@ -147,6 +162,7 @@ output = reflectance * gain  # gain = 2.5 (default)
 ## Troubleshooting
 
 See TROUBLESHOOTING.md for common issues and solutions, including:
+
 - Large AOI read failures
 - Small/black images
 - Cloud cover issues
@@ -155,17 +171,19 @@ See TROUBLESHOOTING.md for common issues and solutions, including:
 ### Quick Fixes
 
 Large AOI failures:
+
 ```yaml
 coordinate_aois:
-  overall_buffer_meters: 100  # Reduce from 500
+  overall_buffer_meters: 100 # Reduce from 500
   # or
-  process_overall: false  # Skip overall AOI
+  process_overall: false # Skip overall AOI
 ```
 
 Small images:
+
 ```yaml
 coordinate_aois:
-  square_size_meters: 1000  # Increase from 50/200
+  square_size_meters: 1000 # Increase from 50/200
 ```
 
 ## Project Structure
@@ -217,6 +235,7 @@ Contributions welcome! Please open an issue or submit a pull request.
 ## Changelog
 
 ### v1.0.0 (2024)
+
 - Initial release
 - Shapefile and coordinate-based AOI support
 - True color normalization (Sentinel Hub method)
