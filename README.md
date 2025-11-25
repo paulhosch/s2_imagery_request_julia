@@ -4,27 +4,27 @@ Interactive Python script to download and visualize Sentinel-2 true color imager
 
 ## Features
 
-✨ **Dual AOI Support**
-- Shapefile-based AOIs (e.g., large regions like Valencia)
-- Coordinate-based square AOIs (e.g., specific point locations)
+### Dual AOI Support
+- Shapefile-based AOIs for large regions (e.g., Valencia)
+- Coordinate-based square AOIs for specific point locations
 - Automatic overall bounding AOI for coordinate sets
 
-🎨 **True Color Processing**
+### True Color Processing
 - Official Sentinel Hub normalization method (linear gain 2.5)
 - Consistent, comparable colors across all images
 - Bright, natural-looking visualization
 
-📊 **Comprehensive Metadata**
-- Automatic `doc.txt` generation for each image
-- Includes: projection, resolution, orbit info, cloud cover, processing details
+### Comprehensive Metadata
+- Automatic doc.txt generation for each image
+- Includes projection, resolution, orbit info, cloud cover, processing details
 - Full STAC metadata from Sentinel-2 tiles
 
-🗺️ **Smart Projection Handling**
-- Native UTM projection (preserves data quality)
+### Smart Projection Handling
+- Native UTM projection preserves data quality
 - Accurate metric measurements for coordinate squares
 - Automatic UTM zone detection
 
-🔄 **Robust Processing**
+### Robust Processing
 - Automatic retry logic for cloud storage issues
 - Handles multi-tile mosaicking
 - Configurable date ranges per AOI type
@@ -128,14 +128,14 @@ output/
 ## Key Parameters
 
 ### Square AOI Size
-- **500m**: Minimum recommended (50×50 pixels at 10m resolution)
-- **1000m**: Good balance (100×100 pixels) - **default**
-- **2000m**: Large context (200×200 pixels)
+- 500m: Minimum recommended (50x50 pixels at 10m resolution)
+- 1000m: Good balance (100x100 pixels) - default
+- 2000m: Large context (200x200 pixels)
 
 ### JPEG Quality
-- **95**: Excellent quality, minimal artifacts - **default**
-- **85-90**: Good quality, smaller files
-- **70-85**: Web display
+- 95: Excellent quality, minimal artifacts - default
+- 85-90: Good quality, smaller files
+- 70-85: Web display
 
 ### True Color Normalization
 Uses official Sentinel Hub method:
@@ -146,7 +146,7 @@ output = reflectance * gain  # gain = 2.5 (default)
 
 ## Troubleshooting
 
-See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for common issues and solutions, including:
+See TROUBLESHOOTING.md for common issues and solutions, including:
 - Large AOI read failures
 - Small/black images
 - Cloud cover issues
@@ -154,7 +154,7 @@ See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for common issues and solutions, in
 
 ### Quick Fixes
 
-**Large AOI failures:**
+Large AOI failures:
 ```yaml
 coordinate_aois:
   overall_buffer_meters: 100  # Reduce from 500
@@ -162,7 +162,7 @@ coordinate_aois:
   process_overall: false  # Skip overall AOI
 ```
 
-**Small images:**
+Small images:
 ```yaml
 coordinate_aois:
   square_size_meters: 1000  # Increase from 50/200
