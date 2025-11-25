@@ -1,0 +1,56 @@
+# Configuration for Sentinel-2 AOI Image Download
+
+# ============================================================================
+# SHAPEFILE-BASED AOI (e.g., Valencia)
+# ============================================================================
+shapefile_aois:
+  - location_name: "Valencia"
+    aoi_shapefile: "data/Valencia/Valencia_DANA_für_Paul_Hosch.shp"
+    date_range:
+      start: "2024-10-29"
+      end: "2024-11-05"
+
+# ============================================================================
+# COORDINATE-BASED AOIs (e.g., Czechia locations)
+# ============================================================================
+coordinate_aois:
+  location_group_name: "Czechia" # Used for organizing output
+  square_size_meters: 1000 # Side length of square AOI around each coordinate (1000m = 100x100 pixels at 10m resolution)
+  overall_buffer_meters: 500 # Buffer around overall bounding AOI (reduce if processing fails due to size)
+  process_overall: true # Whether to create and process an overall bounding AOI
+  date_range:
+    start: "2021-07-18" # Different date range for coordinate AOIs
+    end: "2021-07-24"
+  coordinates:
+    # Format: [latitude, longitude]
+    - [50.088622980462404, 16.920334603584177]
+    - [50.13685897242434, 17.01203807437035]
+    - [50.360140, 17.128160]
+    - [50.3598016, 17.1260514]
+    - [50.3508403, 17.1240851]
+    - [50.0214979, 17.5349566]
+
+# ============================================================================
+# SENTINEL-2 PARAMETERS
+# ============================================================================
+sentinel2:
+  max_cloud_cover: 100 # Maximum cloud cover percentage
+  min_aoi_coverage: 100 # Minimum AOI coverage percentage (100 = full coverage)
+
+# ============================================================================
+# OUTPUT SETTINGS
+# ============================================================================
+output:
+  base_dir: "output"
+  tif_subdir: "tif"
+  jpg_subdir: "jpg"
+  jpg_quality: 95
+  target_resolution: 10 # Target resolution in meters/pixel (Sentinel-2 RGB native is 10m)
+
+# ============================================================================
+# TRUE COLOR BANDS FOR SENTINEL-2
+# ============================================================================
+bands:
+  red: "B04"
+  green: "B03"
+  blue: "B02"
