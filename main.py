@@ -251,6 +251,7 @@ if 'shapefile_aois' in config and config['shapefile_aois']:
             # Process each feature individually
             print(f"  Processing mode: Individual features ({len(aoi_gdf)} features)")
             id_field = aoi_config.get('id_field', 'fid')
+            buffer_meters = aoi_config.get('buffer_meters', 0)
             
             # Check if id_field exists, otherwise use index
             if id_field not in aoi_gdf.columns:
@@ -258,6 +259,9 @@ if 'shapefile_aois' in config and config['shapefile_aois']:
                 use_index = True
             else:
                 use_index = False
+            
+            if buffer_meters > 0:
+                print(f"  Buffer: {buffer_meters}m around each feature")
             
             for idx, row in aoi_gdf.iterrows():
                 # Get feature ID
@@ -269,12 +273,38 @@ if 'shapefile_aois' in config and config['shapefile_aois']:
                 # Create location name with feature ID
                 location_name = f"{aoi_config['location_name']}_R{feature_id}"
                 
-                # Get geometry and bounds for this feature
+                # Get geometry for this feature
                 feature_geometry = row['geometry']
+                
+                # Apply buffer if specified (need to project to metric CRS first)
+                if buffer_meters > 0:
+                    # Get center for UTM zone calculation
+                    centroid = feature_geometry.centroid
+                    center_lon = centroid.x
+                    center_lat = centroid.y
+                    
+                    # Determine UTM zone
+                    utm_zone = int((center_lon + 180) / 6) + 1
+                    hemisphere = 'north' if center_lat >= 0 else 'south'
+                    utm_epsg = 32600 + utm_zone if hemisphere == 'north' else 32700 + utm_zone
+                    
+                    # Project to UTM, buffer, project back
+                    from shapely.ops import transform
+                    import pyproj
+                    
+                    wgs84_to_utm = pyproj.Transformer.from_crs("EPSG:4326", f"EPSG:{utm_epsg}", always_xy=True).transform
+                    utm_to_wgs84 = pyproj.Transformer.from_crs(f"EPSG:{utm_epsg}", "EPSG:4326", always_xy=True).transform
+                    
+                    feature_utm = transform(wgs84_to_utm, feature_geometry)
+                    buffered_utm = feature_utm.buffer(buffer_meters)
+                    feature_geometry = transform(utm_to_wgs84, buffered_utm)
+                
                 feature_bounds = feature_geometry.bounds
                 
                 print(f"\n  [{idx+1}/{len(aoi_gdf)}] Processing feature {feature_id}...")
                 print(f"    Location: {location_name}")
+                if buffer_meters > 0:
+                    print(f"    Original bounds (buffered by {buffer_meters}m)")
                 print(f"    Bounds: {feature_bounds}")
                 
                 # Process this individual feature

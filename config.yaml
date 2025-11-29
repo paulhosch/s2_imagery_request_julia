@@ -6,15 +6,14 @@
 shapefile_aois:
   - location_name: "Valencia"
     aoi_shapefile: "data/Valencia/Valencia_DANA_für_Paul_Hosch.shp"
-    process_as_single: true  # Process all features as one unified AOI
+    process_as_single: true # Process all features as one unified AOI
     date_range:
       start: "2024-10-29"
       end: "2024-11-05"
-  
+
   - location_name: "Ahrtal"
     aoi_shapefile: "data/Ahrtal/Paul_Rechtecke_Ahrtal_200_200.shp"
-    process_as_single: false  # Process each feature individually
-    id_field: "fid"  # Field containing the rectangle number/ID
+    process_as_single: true # Process all rectangles as one unified AOI
     date_range:
       start: "2021-07-15"
       end: "2021-07-19"

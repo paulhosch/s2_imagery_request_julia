@@ -2,7 +2,6 @@
 
 Interactive Python script to download and visualize Sentinel-2 true color imagery from Microsoft Planetary Computer.
 
-
 ## Installation
 
 ### Requirements
@@ -32,6 +31,7 @@ Edit `config.yaml` to configure your AOIs and processing settings:
 ### Shapefile-based AOIs
 
 Process entire shapefile as single AOI:
+
 ```yaml
 shapefile_aois:
   - location_name: "Valencia"
@@ -43,14 +43,15 @@ shapefile_aois:
 ```
 
 Process each feature individually:
+
 ```yaml
-  - location_name: "Ahrtal"
-    aoi_shapefile: "data/Ahrtal/Paul_Rechtecke_Ahrtal_200_200.shp"
-    process_as_single: false # Process each feature individually
-    id_field: "fid" # Field containing the rectangle number/ID
-    date_range:
-      start: "2021-07-15"
-      end: "2021-07-19"
+- location_name: "Ahrtal"
+  aoi_shapefile: "data/Ahrtal/Paul_Rechtecke_Ahrtal_200_200.shp"
+  process_as_single: false # Process each feature individually
+  id_field: "fid" # Field containing the rectangle number/ID
+  date_range:
+    start: "2021-07-15"
+    end: "2021-07-19"
 ```
 
 ### Coordinate-based AOIs (e.g., Czechia)
@@ -96,8 +97,6 @@ python main.py
 
 Or use in Jupyter/VSCode with interactive cells (cells marked with `# %%`).
 
-
-
 ### True Color Normalization
 
 Uses official Sentinel Hub method:
@@ -122,6 +121,5 @@ output = reflectance * gain  # gain = 2.5 (default)
 ## Credits
 
 - **Data Source**: [Microsoft Planetary Computer](https://planetarycomputer.microsoft.com/)
-- **Imagery**: Copernicus Sentinel-2 data, ESA 
+- **Imagery**: Copernicus Sentinel-2 data, ESA
 - **True Color Method**: [Sentinel Hub](https://custom-scripts.sentinel-hub.com/custom-scripts/sentinel-2/true_color/)
-

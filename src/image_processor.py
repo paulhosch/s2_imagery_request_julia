@@ -72,7 +72,7 @@ def load_and_crop_bands(items, aoi_geometry, bands_config, max_retries=3):
                 from rasterio.io import MemoryFile
                 reprojected_files = []
                 
-                for src in src_files:
+                for src_idx, src in enumerate(src_files):
                     if src.crs != target_crs:
                         # Calculate transform for reprojection
                         transform_calc, width, height = calculate_default_transform(
@@ -91,16 +91,33 @@ def load_and_crop_bands(items, aoi_geometry, bands_config, max_retries=3):
                         
                         mem_dataset = memfile.open(**reproj_profile)
                         
-                        # Reproject
-                        reproject(
-                            source=rasterio.band(src, 1),
-                            destination=rasterio.band(mem_dataset, 1),
-                            src_transform=src.transform,
-                            src_crs=src.crs,
-                            dst_transform=transform_calc,
-                            dst_crs=target_crs,
-                            resampling=Resampling.bilinear
-                        )
+                        # Reproject with retry logic
+                        reprojection_success = False
+                        for attempt in range(max_retries):
+                            try:
+                                reproject(
+                                    source=rasterio.band(src, 1),
+                                    destination=rasterio.band(mem_dataset, 1),
+                                    src_transform=src.transform,
+                                    src_crs=src.crs,
+                                    dst_transform=transform_calc,
+                                    dst_crs=target_crs,
+                                    resampling=Resampling.bilinear
+                                )
+                                reprojection_success = True
+                                break
+                            except Exception as e:
+                                if attempt < max_retries - 1:
+                                    print(f"      Retry {attempt + 1}/{max_retries} for reprojection...")
+                                    time.sleep(3)
+                                    # Re-sign and re-open the source
+                                    src.close()
+                                    band_href = planetary_computer.sign(items[src_idx].assets[band_key].href)
+                                    src = rasterio.open(band_href)
+                                    src_files[src_idx] = src
+                                else:
+                                    print(f"      Failed to reproject after {max_retries} attempts: {str(e)}")
+                                    raise
                         
                         reprojected_files.append(mem_dataset)
                     else:
