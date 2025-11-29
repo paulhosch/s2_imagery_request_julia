@@ -1,9 +1,11 @@
 # Output files (generated data - don't commit)
 output/
+output Kopie/
 *.tif
 *.jpg
 *.jpeg
 *.png
+*.zip
 
 # Python
 __pycache__/

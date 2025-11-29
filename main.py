@@ -42,15 +42,15 @@ def process_aoi(location_name, aoi_geometry, bounds, start_date, end_date, confi
     print(f"\nSearching for Sentinel-2 images...")
     print(f"  Date range: {start_date} to {end_date}")
     
-    dates_dict = search_sentinel2_images(
-        bounds=bounds,
+dates_dict = search_sentinel2_images(
+    bounds=bounds,
         start_date=start_date,
         end_date=end_date,
-        max_cloud_cover=config['sentinel2']['max_cloud_cover'],
-        aoi_geometry=aoi_geometry
-    )
-    
-    if len(dates_dict) == 0:
+    max_cloud_cover=config['sentinel2']['max_cloud_cover'],
+    aoi_geometry=aoi_geometry
+)
+
+if len(dates_dict) == 0:
         print("  ⚠ No suitable images found.")
         return
     
@@ -232,15 +232,60 @@ if 'shapefile_aois' in config and config['shapefile_aois']:
         print(f"  Bounds: {bounds}")
         print(f"  CRS: {aoi_gdf.crs}")
         
-        # Process this AOI
-        process_aoi(
-            location_name=aoi_config['location_name'],
-            aoi_geometry=aoi_geometry,
-            bounds=bounds,
-            start_date=aoi_config['date_range']['start'],
-            end_date=aoi_config['date_range']['end'],
-            config=config
-        )
+        # Check if we should process as single AOI or individual features
+        process_as_single = aoi_config.get('process_as_single', True)
+        
+        if process_as_single or len(aoi_gdf) == 1:
+            # Process all features as one unified AOI (default behavior)
+            print(f"  Processing mode: Single unified AOI")
+            
+            process_aoi(
+                location_name=aoi_config['location_name'],
+                aoi_geometry=aoi_geometry,
+                bounds=bounds,
+                start_date=aoi_config['date_range']['start'],
+                end_date=aoi_config['date_range']['end'],
+                config=config
+            )
+        else:
+            # Process each feature individually
+            print(f"  Processing mode: Individual features ({len(aoi_gdf)} features)")
+            id_field = aoi_config.get('id_field', 'fid')
+            
+            # Check if id_field exists, otherwise use index
+            if id_field not in aoi_gdf.columns:
+                print(f"  Warning: ID field '{id_field}' not found, using index instead")
+                use_index = True
+            else:
+                use_index = False
+            
+            for idx, row in aoi_gdf.iterrows():
+                # Get feature ID
+                if use_index:
+                    feature_id = idx + 1  # 1-based index
+                else:
+                    feature_id = row[id_field]
+                
+                # Create location name with feature ID
+                location_name = f"{aoi_config['location_name']}_R{feature_id}"
+                
+                # Get geometry and bounds for this feature
+                feature_geometry = row['geometry']
+                feature_bounds = feature_geometry.bounds
+                
+                print(f"\n  [{idx+1}/{len(aoi_gdf)}] Processing feature {feature_id}...")
+                print(f"    Location: {location_name}")
+                print(f"    Bounds: {feature_bounds}")
+                
+                # Process this individual feature
+                process_aoi(
+                    location_name=location_name,
+                    aoi_geometry=feature_geometry,
+                    bounds=feature_bounds,
+                    start_date=aoi_config['date_range']['start'],
+                    end_date=aoi_config['date_range']['end'],
+                    config=config
+                )
 else:
     print("  No shapefile AOIs configured.")
 

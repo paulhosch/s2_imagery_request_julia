@@ -2,38 +2,6 @@
 
 Interactive Python script to download and visualize Sentinel-2 true color imagery from Microsoft Planetary Computer.
 
-## Features
-
-### Dual AOI Support
-
-- Shapefile-based AOIs for large regions (e.g., Valencia)
-- Coordinate-based square AOIs for specific point locations
-- Automatic overall bounding AOI for coordinate sets
-
-### True Color Processing
-
-- Official Sentinel Hub normalization method (linear gain 2.5)
-- Consistent, comparable colors across all images
-- Bright, natural-looking visualization
-
-### Comprehensive Metadata
-
-- Automatic doc.txt generation for each image
-- Includes projection, resolution, orbit info, cloud cover, processing details
-- Full STAC metadata from Sentinel-2 tiles
-
-### Smart Projection Handling
-
-- Native UTM projection preserves data quality
-- Accurate metric measurements for coordinate squares
-- Automatic UTM zone detection
-
-### Robust Processing
-
-- Automatic retry logic for cloud storage issues
-- Handles multi-tile mosaicking
-- Configurable date ranges per AOI type
-- Graceful error handling
 
 ## Installation
 
@@ -61,15 +29,28 @@ pip install -r requirements.txt
 
 Edit `config.yaml` to configure your AOIs and processing settings:
 
-### Shapefile-based AOIs (e.g., Valencia)
+### Shapefile-based AOIs
 
+Process entire shapefile as single AOI:
 ```yaml
 shapefile_aois:
   - location_name: "Valencia"
     aoi_shapefile: "data/Valencia/Valencia_DANA_für_Paul_Hosch.shp"
+    process_as_single: true # Process all features as one unified AOI
     date_range:
       start: "2024-10-29"
       end: "2024-11-05"
+```
+
+Process each feature individually:
+```yaml
+  - location_name: "Ahrtal"
+    aoi_shapefile: "data/Ahrtal/Paul_Rechtecke_Ahrtal_200_200.shp"
+    process_as_single: false # Process each feature individually
+    id_field: "fid" # Field containing the rectangle number/ID
+    date_range:
+      start: "2021-07-15"
+      end: "2021-07-19"
 ```
 
 ### Coordinate-based AOIs (e.g., Czechia)
@@ -115,40 +96,7 @@ python main.py
 
 Or use in Jupyter/VSCode with interactive cells (cells marked with `# %%`).
 
-### Output Structure
 
-```
-output/
-├── tif/
-│   ├── Valencia/
-│   │   ├── Valencia_20241031.tif
-│   │   ├── Valencia_20241105.tif
-│   │   └── doc.txt
-│   ├── Czechia_50_0887N_16_9203E/
-│   │   ├── Czechia_50_0887N_16_9203E_20210719.tif
-│   │   └── doc.txt
-│   └── Czechia_overall/
-│       ├── Czechia_overall_20210719.tif
-│       └── doc.txt
-└── jpg/
-    ├── Valencia/
-    ├── Czechia_50_0887N_16_9203E/
-    └── Czechia_overall/
-```
-
-## Key Parameters
-
-### Square AOI Size
-
-- 500m: Minimum recommended (50x50 pixels at 10m resolution)
-- 1000m: Good balance (100x100 pixels) - default
-- 2000m: Large context (200x200 pixels)
-
-### JPEG Quality
-
-- 95: Excellent quality, minimal artifacts - default
-- 85-90: Good quality, smaller files
-- 70-85: Web display
 
 ### True Color Normalization
 
@@ -157,49 +105,6 @@ Uses official Sentinel Hub method:
 ```python
 reflectance = pixel_value / 10000.0
 output = reflectance * gain  # gain = 2.5 (default)
-```
-
-## Troubleshooting
-
-See TROUBLESHOOTING.md for common issues and solutions, including:
-
-- Large AOI read failures
-- Small/black images
-- Cloud cover issues
-- Memory problems
-
-### Quick Fixes
-
-Large AOI failures:
-
-```yaml
-coordinate_aois:
-  overall_buffer_meters: 100 # Reduce from 500
-  # or
-  process_overall: false # Skip overall AOI
-```
-
-Small images:
-
-```yaml
-coordinate_aois:
-  square_size_meters: 1000 # Increase from 50/200
-```
-
-## Project Structure
-
-```
-.
-├── main.py                 # Main processing script
-├── config.yaml            # Configuration file
-├── requirements.txt       # Python dependencies
-├── TROUBLESHOOTING.md    # Troubleshooting guide
-├── src/
-│   ├── aoi_handler.py    # AOI creation and management
-│   ├── image_processor.py # Image processing and normalization
-│   └── sentinel2_query.py # STAC API queries
-├── data/                  # Input shapefiles
-└── output/               # Generated images and metadata
 ```
 
 ## How It Works
@@ -217,29 +122,6 @@ coordinate_aois:
 ## Credits
 
 - **Data Source**: [Microsoft Planetary Computer](https://planetarycomputer.microsoft.com/)
-- **Imagery**: Copernicus Sentinel-2 data
+- **Imagery**: Copernicus Sentinel-2 data, ESA 
 - **True Color Method**: [Sentinel Hub](https://custom-scripts.sentinel-hub.com/custom-scripts/sentinel-2/true_color/)
 
-## License
-
-MIT License - see LICENSE file for details
-
-## Author
-
-Paul Hosch - [GitHub](https://github.com/paulhosch)
-
-## Contributing
-
-Contributions welcome! Please open an issue or submit a pull request.
-
-## Changelog
-
-### v1.0.0 (2024)
-
-- Initial release
-- Shapefile and coordinate-based AOI support
-- True color normalization (Sentinel Hub method)
-- Automatic metadata documentation
-- Overall bounding AOI functionality
-- Retry logic for large AOIs
-- Comprehensive error handling
