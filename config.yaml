@@ -14,6 +14,7 @@ shapefile_aois:
   - location_name: "Ahrtal"
     aoi_shapefile: "data/Ahrtal/Paul_Rechtecke_Ahrtal_200_200.shp"
     process_as_single: true # Process all rectangles as one unified AOI
+    use_bounding_box: true # Use full bounding box instead of just the rectangles
     date_range:
       start: "2021-07-15"
       end: "2021-07-19"

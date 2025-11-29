@@ -232,6 +232,14 @@ if 'shapefile_aois' in config and config['shapefile_aois']:
         print(f"  Bounds: {bounds}")
         print(f"  CRS: {aoi_gdf.crs}")
         
+        # Check if we should use bounding box instead of exact geometries
+        use_bounding_box = aoi_config.get('use_bounding_box', False)
+        if use_bounding_box and len(aoi_gdf) > 1:
+            print(f"  Using full bounding box (not just feature geometries)")
+            # Create a box from the bounds
+            from shapely.geometry import box
+            aoi_geometry = box(*bounds)
+        
         # Check if we should process as single AOI or individual features
         process_as_single = aoi_config.get('process_as_single', True)
         

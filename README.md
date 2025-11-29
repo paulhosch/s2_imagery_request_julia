@@ -42,13 +42,26 @@ shapefile_aois:
       end: "2024-11-05"
 ```
 
+Process multiple features with full bounding box:
+
+```yaml
+- location_name: "Ahrtal"
+  aoi_shapefile: "data/Ahrtal/Paul_Rechtecke_Ahrtal_200_200.shp"
+  process_as_single: true # Process all features as one
+  use_bounding_box: true # Use full bounding box (entire area, not just features)
+  date_range:
+    start: "2021-07-15"
+    end: "2021-07-19"
+```
+
 Process each feature individually:
 
 ```yaml
 - location_name: "Ahrtal"
   aoi_shapefile: "data/Ahrtal/Paul_Rechtecke_Ahrtal_200_200.shp"
-  process_as_single: false # Process each feature individually
-  id_field: "fid" # Field containing the rectangle number/ID
+  process_as_single: false
+  id_field: "fid"
+  buffer_meters: 400
   date_range:
     start: "2021-07-15"
     end: "2021-07-19"
