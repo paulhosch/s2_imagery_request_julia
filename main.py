@@ -42,15 +42,15 @@ def process_aoi(location_name, aoi_geometry, bounds, start_date, end_date, confi
     print(f"\nSearching for Sentinel-2 images...")
     print(f"  Date range: {start_date} to {end_date}")
     
-dates_dict = search_sentinel2_images(
+    dates_dict = search_sentinel2_images(
     bounds=bounds,
         start_date=start_date,
         end_date=end_date,
     max_cloud_cover=config['sentinel2']['max_cloud_cover'],
     aoi_geometry=aoi_geometry
-)
+    )
 
-if len(dates_dict) == 0:
+    if len(dates_dict) == 0:
         print("  ⚠ No suitable images found.")
         return
     
