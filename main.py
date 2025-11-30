@@ -17,7 +17,8 @@ from src.image_processor import (
     normalize_for_display,
     export_geotiff,
     export_jpeg,
-    write_metadata_doc
+    write_metadata_doc,
+    crop_from_existing_tif
 )
 
 # %%
@@ -53,11 +54,11 @@ def process_aoi(location_name, aoi_geometry, bounds, start_date, end_date, confi
     print(f"  Date range: {start_date} to {end_date}")
     
     dates_dict = search_sentinel2_images(
-        bounds=bounds,
+    bounds=bounds,
         start_date=start_date,
         end_date=end_date,
-        max_cloud_cover=config['sentinel2']['max_cloud_cover'],
-        aoi_geometry=aoi_geometry
+    max_cloud_cover=config['sentinel2']['max_cloud_cover'],
+    aoi_geometry=aoi_geometry
     )
 
     if len(dates_dict) == 0:
@@ -274,6 +275,7 @@ if 'shapefile_aois' in config and config['shapefile_aois']:
             id_field = aoi_config.get('id_field', 'fid')
             buffer_meters = aoi_config.get('buffer_meters', 0)
             shared_folder = aoi_config.get('shared_folder', False)
+            crop_from_existing = aoi_config.get('crop_from_existing', None)
             
             # Check if id_field exists, otherwise use index
             if id_field not in aoi_gdf.columns:
@@ -287,6 +289,125 @@ if 'shapefile_aois' in config and config['shapefile_aois']:
             
             if shared_folder:
                 print(f"  Output: All features in single folder '{aoi_config['location_name']}'")
+            
+            # Check if we should crop from existing TIF files
+            if crop_from_existing:
+                print(f"  Method: Crop from existing '{crop_from_existing}' TIF files (faster)")
+                
+                # Find available source TIF files
+                source_tif_dir = os.path.join(
+                    config['output']['base_dir'],
+                    config['output']['tif_subdir'],
+                    crop_from_existing
+                )
+                
+                if not os.path.exists(source_tif_dir):
+                    print(f"  ✗ Error: Source TIF directory not found: {source_tif_dir}")
+                    print(f"     Please process '{crop_from_existing}' first!")
+                    continue
+                
+                # Get list of available TIF files (dates)
+                import glob
+                source_tifs = glob.glob(os.path.join(source_tif_dir, "*.tif"))
+                
+                if not source_tifs:
+                    print(f"  ✗ Error: No TIF files found in {source_tif_dir}")
+                    continue
+                
+                print(f"  Found {len(source_tifs)} source TIF file(s)")
+                
+                # Process each feature by cropping from existing TIFs
+                for idx, row in aoi_gdf.iterrows():
+                    # Get feature ID
+                    if use_index:
+                        feature_id = idx + 1
+                    else:
+                        feature_id = row[id_field]
+                    
+                    location_name = f"{aoi_config['location_name']}_R{feature_id}"
+                    feature_geometry = row['geometry']
+                    
+                    # Apply buffer if specified
+                    if buffer_meters > 0:
+                        from shapely.ops import transform
+                        import pyproj
+                        
+                        centroid = feature_geometry.centroid
+                        center_lon = centroid.x
+                        center_lat = centroid.y
+                        
+                        utm_zone = int((center_lon + 180) / 6) + 1
+                        hemisphere = 'north' if center_lat >= 0 else 'south'
+                        utm_epsg = 32600 + utm_zone if hemisphere == 'north' else 32700 + utm_zone
+                        
+                        wgs84_to_utm = pyproj.Transformer.from_crs("EPSG:4326", f"EPSG:{utm_epsg}", always_xy=True).transform
+                        utm_to_wgs84 = pyproj.Transformer.from_crs(f"EPSG:{utm_epsg}", "EPSG:4326", always_xy=True).transform
+                        
+                        feature_utm = transform(wgs84_to_utm, feature_geometry)
+                        buffered_utm = feature_utm.buffer(buffer_meters)
+                        feature_geometry = transform(utm_to_wgs84, buffered_utm)
+                    
+                    print(f"\n  [{idx+1}/{len(aoi_gdf)}] Processing feature {feature_id} from existing TIFs...")
+                    
+                    # Determine output folder
+                    folder_name = aoi_config['location_name'] if shared_folder else location_name
+                    folder_name_safe = folder_name.replace(' ', '_')
+                    
+                    tif_location_dir = os.path.join(
+                        config['output']['base_dir'],
+                        config['output']['tif_subdir'],
+                        folder_name_safe
+                    )
+                    jpg_location_dir = os.path.join(
+                        config['output']['base_dir'],
+                        config['output']['jpg_subdir'],
+                        folder_name_safe
+                    )
+                    
+                    os.makedirs(tif_location_dir, exist_ok=True)
+                    os.makedirs(jpg_location_dir, exist_ok=True)
+                    
+                    # Process each source TIF file
+                    for source_tif_path in source_tifs:
+                        # Extract date from source filename
+                        source_filename = os.path.basename(source_tif_path)
+                        # Format: Ahrtal_20210718.tif -> 20210718
+                        date_str = source_filename.replace(f"{crop_from_existing}_", "").replace(".tif", "")
+                        
+                        location_safe = location_name.replace(' ', '_')
+                        base_filename = f"{location_safe}_{date_str}"
+                        
+                        tif_path = os.path.join(tif_location_dir, f"{base_filename}.tif")
+                        jpg_path = os.path.join(jpg_location_dir, f"{base_filename}.jpg")
+                        
+                        # Skip if already exists
+                        if os.path.exists(tif_path) and os.path.exists(jpg_path):
+                            print(f"    {date_str}: Already exists, skipping...")
+                            continue
+                        
+                        try:
+                            print(f"    {date_str}: Cropping from {source_filename}...")
+                            
+                            # Crop from existing TIF
+                            rgb_array, profile = crop_from_existing_tif(
+                                source_tif_path,
+                                feature_geometry,
+                                config['output']['target_resolution']
+                            )
+                            
+                            # Export GeoTIFF
+                            export_geotiff(rgb_array, profile, tif_path)
+                            
+                            # Normalize and export JPEG
+                            rgb_normalized = normalize_for_display(rgb_array)
+                            export_jpeg(rgb_normalized, jpg_path, quality=config['output']['jpg_quality'])
+                            
+                        except Exception as e:
+                            print(f"    ✗ Error: {str(e)}")
+                            continue
+                
+                print(f"\n✓ Completed processing {len(aoi_gdf)} features from existing TIFs")
+                continue  # Skip the normal processing below
             
             for idx, row in aoi_gdf.iterrows():
                 # Get feature ID
@@ -519,6 +640,7 @@ print(f"  Output directory: {config['output']['base_dir']}/")
 print(f"  GeoTIFF files: {config['output']['tif_subdir']}/")
 print(f"  JPEG files: {config['output']['jpg_subdir']}/")
 print(f"  True color method: Official Sentinel Hub (linear gain)")
+
 
 
 # %%

@@ -25,6 +25,7 @@ shapefile_aois:
     id_field: "fid" # Field containing the rectangle number/ID
     buffer_meters: 0 # No buffer for individual rectangles (200m x 200m)
     shared_folder: true # Store all rectangles in one folder (not separate folders per rectangle)
+    crop_from_existing: "Ahrtal" # Crop from existing TIF files instead of redownloading
     date_range:
       start: "2021-07-17"
       end: "2021-07-19"

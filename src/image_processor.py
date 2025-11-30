@@ -318,6 +318,51 @@ def export_jpeg(rgb_array, output_path, quality=95):
     print(f"Saved JPEG: {output_path}")
 
 
+def crop_from_existing_tif(source_tif_path, aoi_geometry, target_resolution=10):
+    """Crop a region from an existing TIF file.
+    
+    Args:
+        source_tif_path: Path to the source TIF file
+        aoi_geometry: Shapely geometry to crop (in WGS84)
+        target_resolution: Target resolution in meters/pixel
+        
+    Returns:
+        tuple: (rgb_array, profile) - RGB array (H, W, 3) and rasterio profile
+    """
+    import rasterio
+    from rasterio.mask import mask
+    import pyproj
+    from shapely.ops import transform
+    
+    with rasterio.open(source_tif_path) as src:
+        # Reproject AOI geometry to match source CRS
+        if src.crs.to_epsg() != 4326:
+            project = pyproj.Transformer.from_crs(
+                "EPSG:4326",  # WGS84 (AOI is in this CRS)
+                src.crs,
+                always_xy=True
+            ).transform
+            aoi_reprojected = transform(project, aoi_geometry)
+        else:
+            aoi_reprojected = aoi_geometry
+        
+        # Crop to AOI
+        cropped, out_transform = mask(src, [aoi_reprojected], crop=True, all_touched=True)
+        
+        # Create profile for output
+        profile = src.profile.copy()
+        profile.update({
+            'height': cropped.shape[1],
+            'width': cropped.shape[2],
+            'transform': out_transform
+        })
+        
+        # Convert from (bands, height, width) to (height, width, bands)
+        rgb_array = np.transpose(cropped, (1, 2, 0))
+    
+    return rgb_array, profile
+
+
 def write_metadata_doc(output_dir, location_name, date, items, profile, config):
     """Write metadata documentation file for the image.
     
