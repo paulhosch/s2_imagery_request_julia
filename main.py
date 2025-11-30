@@ -36,18 +36,28 @@ print(f"  Max cloud cover: {config['sentinel2']['max_cloud_cover']}%")
 
 # %%
 # Process shapefile-based AOIs
-def process_aoi(location_name, aoi_geometry, bounds, start_date, end_date, config):
-    """Process a single AOI (shapefile or coordinate-based)."""
+def process_aoi(location_name, aoi_geometry, bounds, start_date, end_date, config, output_folder=None):
+    """Process a single AOI (shapefile or coordinate-based).
+    
+    Args:
+        location_name: Name used for filenames
+        aoi_geometry: Shapely geometry of the AOI
+        bounds: Bounding box of the AOI
+        start_date: Start date for imagery search
+        end_date: End date for imagery search
+        config: Configuration dictionary
+        output_folder: Optional folder name (if different from location_name)
+    """
     
     print(f"\nSearching for Sentinel-2 images...")
     print(f"  Date range: {start_date} to {end_date}")
     
     dates_dict = search_sentinel2_images(
-    bounds=bounds,
+        bounds=bounds,
         start_date=start_date,
         end_date=end_date,
-    max_cloud_cover=config['sentinel2']['max_cloud_cover'],
-    aoi_geometry=aoi_geometry
+        max_cloud_cover=config['sentinel2']['max_cloud_cover'],
+        aoi_geometry=aoi_geometry
     )
 
     if len(dates_dict) == 0:
@@ -71,16 +81,19 @@ def process_aoi(location_name, aoi_geometry, bounds, start_date, end_date, confi
         date_str = date.replace('-', '')
         base_filename = f"{location_safe}_{date_str}"
         
+        # Use output_folder if provided, otherwise use location_name
+        folder_name = output_folder.replace(' ', '_') if output_folder else location_safe
+        
         # Create subdirectories for this location
         tif_location_dir = os.path.join(
             config['output']['base_dir'],
             config['output']['tif_subdir'],
-            location_safe
+            folder_name
         )
         jpg_location_dir = os.path.join(
             config['output']['base_dir'],
             config['output']['jpg_subdir'],
-            location_safe
+            folder_name
         )
         
         # Ensure directories exist
@@ -260,6 +273,7 @@ if 'shapefile_aois' in config and config['shapefile_aois']:
             print(f"  Processing mode: Individual features ({len(aoi_gdf)} features)")
             id_field = aoi_config.get('id_field', 'fid')
             buffer_meters = aoi_config.get('buffer_meters', 0)
+            shared_folder = aoi_config.get('shared_folder', False)
             
             # Check if id_field exists, otherwise use index
             if id_field not in aoi_gdf.columns:
@@ -270,6 +284,9 @@ if 'shapefile_aois' in config and config['shapefile_aois']:
             
             if buffer_meters > 0:
                 print(f"  Buffer: {buffer_meters}m around each feature")
+            
+            if shared_folder:
+                print(f"  Output: All features in single folder '{aoi_config['location_name']}'")
             
             for idx, row in aoi_gdf.iterrows():
                 # Get feature ID
@@ -315,6 +332,9 @@ if 'shapefile_aois' in config and config['shapefile_aois']:
                     print(f"    Original bounds (buffered by {buffer_meters}m)")
                 print(f"    Bounds: {feature_bounds}")
                 
+                # Determine output folder
+                output_folder = aoi_config['location_name'] if shared_folder else None
+                
                 # Process this individual feature
                 process_aoi(
                     location_name=location_name,
@@ -322,7 +342,8 @@ if 'shapefile_aois' in config and config['shapefile_aois']:
                     bounds=feature_bounds,
                     start_date=aoi_config['date_range']['start'],
                     end_date=aoi_config['date_range']['end'],
-                    config=config
+                    config=config,
+                    output_folder=output_folder
                 )
 else:
     print("  No shapefile AOIs configured.")

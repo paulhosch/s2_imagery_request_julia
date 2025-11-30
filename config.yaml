@@ -18,6 +18,25 @@ shapefile_aois:
     date_range:
       start: "2021-07-15"
       end: "2021-07-19"
+  
+  - location_name: "Ahrtal_rect"
+    aoi_shapefile: "data/Ahrtal/Paul_Rechtecke_Ahrtal_200_200.shp"
+    process_as_single: false # Process each rectangle individually
+    id_field: "fid" # Field containing the rectangle number/ID
+    buffer_meters: 0 # No buffer for individual rectangles
+    shared_folder: true # Store all rectangles in one folder (not separate folders per rectangle)
+    date_range:
+      start: "2021-07-15"
+      end: "2021-07-19"
+
+  - location_name: "Ahrtal_rect"
+    aoi_shapefile: "data/Ahrtal/Paul_Rechtecke_Ahrtal_200_200.shp"
+    process_as_single: false # Process each rectangle individually
+    id_field: "fid" # Field containing the rectangle number/ID
+    buffer_meters: 400 # Add buffer around each small rectangle (210mx210m -> 1010mx1010m)
+    date_range:
+      start: "2021-07-15"
+      end: "2021-07-19"
 
 # ============================================================================
 # COORDINATE-BASED AOIs (e.g., Czechia locations)
